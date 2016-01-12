@@ -1,14 +1,12 @@
 package com.ncsoft.wampscala
 
-import spray.json.{JsArray, JsObject}
+import play.api.libs.json.{JsArray, JsObject}
 
 import scala.collection.mutable
 
-trait PubSubService {
-  val subscribers = new mutable.HashMap[Long, Subscription]
-
-  def subscribe(subscription:Subscription)
-  def unsubscribe(id:Long)
+abstract class PubSubService(eventHandler: Event => Any) {
+  def subscribe(topic:String):Long
+  def unsubscribe(topic:String, id:Long)
 
   def publish(topic:String, publicationId:Long, options:JsObject, argumentsOpt:Option[JsArray],
               argumentsKwOpt:Option[JsObject]):Long

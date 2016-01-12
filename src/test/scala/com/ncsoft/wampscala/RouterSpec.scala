@@ -22,7 +22,7 @@ with BeforeAndAfterAll {
 
   "Router" must {
     "handle HELLO" in {
-      val routerActor = TestActorRef(new Router(new AkkaPubSubService))
+      val routerActor = TestActorRef(new Router(new SimplePubSubService))
       val futureResult = routerActor ? Hello("realm", JsObject())
       val Success(result:Message) = futureResult.value.get
 

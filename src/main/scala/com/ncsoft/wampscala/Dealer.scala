@@ -2,7 +2,7 @@ package com.ncsoft.wampscala
 
 import akka.actor.ActorRef
 
-class Dealer extends Role {
+class Dealer(router:Router) extends Role {
   def messageHandler(client:ActorRef) = {
     case msg: Call =>
       // TODO: implement

@@ -1,5 +1,6 @@
 package com.ncsoft.wampscala
 
+import play.api.libs.json._
 import spray.json._
 
 import MessageCode._
