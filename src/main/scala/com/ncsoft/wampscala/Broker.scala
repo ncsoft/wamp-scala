@@ -119,10 +119,8 @@ class Broker(router:Router, pubSubService: PubSubService) extends Role {
   def onUnsubscribe(msg:Unsubscribe, client:ActorRef): Unit = {
     val response = router.sessionOpt match {
       case Some(session) =>
-        session.subscriptionIds.contains(msg.subscriptionId) match {
+        unsubscribe(session, msg.subscriptionId) match {
           case true =>
-            pubSubService.unsubscribe(msg.subscriptionId)
-
             Unsubscribed(msg.requestId)
 
           case false =>
@@ -134,5 +132,18 @@ class Broker(router:Router, pubSubService: PubSubService) extends Role {
     }
 
     client ! response
+  }
+
+  def unsubscribe(session:Session, subscriptionId:Long): Boolean = {
+    session.subscriptionIds.contains(subscriptionId) match {
+      case true =>
+        pubSubService.unsubscribe(subscriptionId)
+        session.subscriptionIds.remove(subscriptionId)
+
+        true
+
+      case false =>
+        false
+    }
   }
 }

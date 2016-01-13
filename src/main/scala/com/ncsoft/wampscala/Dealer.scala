@@ -4,19 +4,30 @@ import akka.actor.ActorRef
 
 class Dealer(router:Router) extends Role {
   def messageHandler(client:ActorRef) = {
-    case msg: Call =>
-      // TODO: implement
+    case msg: Call =>       onCall(msg, client)
+    case msg: Yield =>      onYield(msg, client)
+    case msg: Register =>   onRegister(msg, client)
+    case msg: Unregister => onUnregister(msg, client)
+    case msg: Error =>      onError(msg, client)
+  }
 
-    case msg: Yield =>
-    // TODO: implement
+  def onCall(msg:Call, client:ActorRef): Unit = {
 
-    case msg: Register =>
-    // TODO: implement
+  }
 
-    case msg: Unregister =>
-    // TODO: implement
+  def onYield(msg:Yield, client:ActorRef): Unit = {
 
-    case msg: Error =>
-    // TODO: implement
+  }
+
+  def onRegister(msg:Register, client:ActorRef): Unit = {
+
+  }
+
+  def onUnregister(msg:Unregister, client:ActorRef): Unit = {
+
+  }
+
+  def onError(msg:Error, client:ActorRef): Unit = {
+
   }
 }

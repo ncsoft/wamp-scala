@@ -5,7 +5,7 @@ import play.api.libs.json.{JsArray, JsObject}
 
 import scala.concurrent.ExecutionContext
 
-abstract class PubSubService(eventHandler: (Long, Event) => Any, ec:ExecutionContext) {
+abstract class PubSubService(ec:ExecutionContext) {
   def subscribe(topic:String, client:ActorRef):Long
   def unsubscribe(id:Long)
 

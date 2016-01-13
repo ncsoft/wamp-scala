@@ -7,8 +7,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable
 
 
-class SimplePubSubService(eventHandler:(Long, Event) => Any, idGenerator:IdGenerator, ec:ExecutionContext)
-  extends PubSubService(eventHandler, ec) {
+class SimplePubSubService(idGenerator:IdGenerator, ec:ExecutionContext)
+  extends PubSubService(ec) {
 
   val topics = new mutable.HashMap[String, Topic]
   val subscribedTopics = new mutable.HashMap[Long, Topic]

@@ -45,11 +45,10 @@ class Router(clientOpt:Option[ActorRef] = None,
              pubSubServiceOpt: Option[PubSubService] = None,
              idGeneratorOpt:Option[IdGenerator] = None,
              ec:ExecutionContext = Implicits.global) extends Actor {
-  val idGenerator = idGeneratorOpt.getOrElse(new SimpleIdGenerator)
-  def handler(x:Long, y:Event):Any = {}
-  val pubSubService = pubSubServiceOpt.getOrElse(new SimplePubSubService(handler, idGenerator, ec))
 
-  val broker = new Broker(this, pubSubService)
+  val idGenerator = idGeneratorOpt.getOrElse(new SimpleIdGenerator)
+
+  val broker = new Broker(this, pubSubServiceOpt.getOrElse(new SimplePubSubService(idGenerator, ec)))
   val dealer = new Dealer(this)
 
   var sessionOpt:Option[Session] = None
@@ -126,7 +125,9 @@ class Router(clientOpt:Option[ActorRef] = None,
       Router.sessions.remove(session.id)
 
       // subscription 해제
-
+      session.subscriptionIds.foreach { subscriptionId =>
+//        pubSubService.unsubscribe()
+      }
 //      session.subscriptionIds.foreach { subscriptionId =>
 //        pubSubService.unsubscribe()
 //      }

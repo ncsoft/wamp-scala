@@ -2,7 +2,7 @@ package com.ncsoft.wampscala
 
 import akka.actor.ActorSystem
 import akka.pattern.ask
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestActors}
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import org.scalatest._
 import play.api.libs.json.Json
 
@@ -18,8 +18,6 @@ with BeforeAndAfterAll {
   override def afterAll() {
     TestKit.shutdownActorSystem(system)
   }
-
-  val idGen = new SimpleIdGenerator
 
   "Router" must {
     "handle HELLO" in {
@@ -44,65 +42,5 @@ with BeforeAndAfterAll {
 
       assert(result2.code == MessageCode.GOODBYE)
     }
-
-    "handle SUBSCRIBE" in {
-      val router = TestActorRef(new Router)
-
-      val futureResult = router ? Hello("realm", Json.obj())
-      val Success(result:Message) = futureResult.value.get
-
-      assert(result.code == MessageCode.WELCOME)
-
-      val topicString = "test_topic"
-      val f = router ? Subscribe(idGen(IdScope.Session), Json.obj(), topicString)
-      val Success(r:Message) = f.value.get
-
-      assert(r.code == MessageCode.SUBSCRIBED)
-    }
-
-    "handle UNSUBSCRIBE" in {
-      val router = TestActorRef(new Router)
-
-      val futureResult = router ? Hello("realm", Json.obj())
-      val Success(result:Message) = futureResult.value.get
-
-      assert(result.code == MessageCode.WELCOME)
-
-      val topicString = "test_topic"
-      val f = router ? Subscribe(idGen(IdScope.Session), Json.obj(), topicString)
-      val Success(r:Message) = f.value.get
-
-      assert(r.code == MessageCode.SUBSCRIBED)
-
-      val subscriptionId = r.asInstanceOf[Subscribed].subscriptionId
-      val f2 = router ? Unsubscribe(idGen(IdScope.Session), subscriptionId)
-      val Success(r2:Message) = f2.value.get
-      val s = router.underlyingActor.pubSubService.asInstanceOf[SimplePubSubService]
-
-      assert(r2.code == MessageCode.UNSUBSCRIBED)
-      assert(!s.subscribedTopics.contains(subscriptionId))
-    }
-
-    "handle PUBLISH" in {
-      val router = TestActorRef(new Router)
-
-      router ! Hello("realm", Json.obj())
-      expectMsgClass[Welcome](3.second, classOf[Welcome])
-
-      val topicString = "test_topic"
-
-      router ! Subscribe(idGen(IdScope.Session), Json.obj(), topicString)
-      expectMsgClass[Subscribed](3.second, classOf[Subscribed])
-
-      val argKw = Json.obj("name" -> "test")
-      router ! Publish(idGen(IdScope.Session), Json.obj(), topicString, None, Some(argKw))
-      expectMsgClass[Published](3.second, classOf[Published])
-
-      val m = expectMsgClass[Event](3.second, classOf[Event])
-
-      assert( (m.publishArgumentsKwOpt.get \ "name").as[String] == "test" )
-
-    }
-
   }
 }
