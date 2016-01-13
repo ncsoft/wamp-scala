@@ -124,13 +124,9 @@ class Router(clientOpt:Option[ActorRef] = None,
     sessionOpt.foreach { session =>
       Router.sessions.remove(session.id)
 
-      // subscription 해제
       session.subscriptionIds.foreach { subscriptionId =>
-//        pubSubService.unsubscribe()
+        broker.unsubscribe(session, subscriptionId)
       }
-//      session.subscriptionIds.foreach { subscriptionId =>
-//        pubSubService.unsubscribe()
-//      }
     }
 
 
