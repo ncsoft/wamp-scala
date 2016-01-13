@@ -1,11 +1,16 @@
 package com.ncsoft.wampscala
 
 import java.util.concurrent.ConcurrentHashMap
+import akka.actor.ActorRef
+
 import scala.collection.JavaConverters._
 
-class Topic(topic:String) {
-  val subscribers = new ConcurrentHashMap[Long, Long].asScala
+case class Subscription(id:Long, client:ActorRef)
 
-  def addSubscriber(id:Long) = subscribers.put(id, id)
-  def removeSubscriber(id:Long) = subscribers.remove(id)
+class Topic(topic:String) {
+  val subscriptions = new ConcurrentHashMap[Long, Subscription].asScala
+
+  def subscribe(id:Long, client:ActorRef) = subscriptions.put(id, Subscription(id, client))
+
+  def unsubscribe(id:Long) = subscriptions.remove(id)
 }

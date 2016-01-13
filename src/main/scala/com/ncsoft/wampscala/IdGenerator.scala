@@ -7,18 +7,20 @@ object IdScope {
   val Default = Router
 }
 
-object IdGenerator {
-
-  protected var idGenerator:IdGenerator = null
-
-  def initialize(generator:IdGenerator) = {
-    idGenerator = generator
-  }
-
-  def apply(scope:Int = IdScope.Default): Long = idGenerator.nextId(scope)
-}
+//object IdGenerator {
+//
+//  protected var idGenerator:IdGenerator = null
+//
+//  def initialize(generator:IdGenerator) = {
+//    idGenerator = generator
+//  }
+//
+//  def apply(scope:Int = IdScope.Default): Long = idGenerator.nextId(scope)
+//}
 
 trait IdGenerator {
+  def apply(scope:Int) = nextId(scope)
+
   def nextId(scope:Int): Long = {
     scope match {
       case IdScope.Global =>
@@ -37,7 +39,7 @@ trait IdGenerator {
   def nextSessionScopeId(): Long
 }
 
-class DefaultIdGenerator extends IdGenerator {
+class SimpleIdGenerator extends IdGenerator {
   def nextGlobalScopeId(): Long = {
     Math.floor(9007199254740991L * Math.random()).toLong
   }

@@ -1,14 +1,12 @@
 package com.ncsoft.wampscala
 
-import java.util.concurrent.ConcurrentHashMap
-
 import akka.actor.ActorRef
+import com.ncsoft.wampscala.MessageCode._
 import play.api.libs.json._
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-case class Subscription(id:Long)
+//case class Subscription(id:Long)
 
 object TrustLevel {
   val Lowest = 0
@@ -20,11 +18,10 @@ object TrustLevel {
 
 object Broker {
   val createdTopics = new mutable.HashSet[String]
-//  val subscriptions = new ConcurrentHashMap[Long, String].asScala
 }
 
 
-class Broker(router:Router, client:ActorRef, pubSubService: PubSubService) extends Role {
+class Broker(router:Router, pubSubService: PubSubService) extends Role {
   object RealmUniqueTopic {
     def apply(realm:String, topic:String):String = {
       s"$realm..$topic"
@@ -80,14 +77,14 @@ class Broker(router:Router, client:ActorRef, pubSubService: PubSubService) exten
           Published(msg.requestId, publicationId)
         } catch {
           case t:WampException =>
-            Error(MessageCode.PUBLISH, msg.requestId, Json.obj("message" -> t.toString), t.reason, None, None)
+            Error(PUBLISH, msg.requestId, Json.obj("message" -> t.toString), t.reason, None, None)
 
           case t:Throwable =>
-            Error(MessageCode.PUBLISH, msg.requestId, Json.obj("message" -> t.getMessage), Reason.Unknown, None, None)
+            Error(PUBLISH, msg.requestId, Json.obj("message" -> t.getMessage), Reason.Unknown, None, None)
         }
 
       case _ =>
-        Error(MessageCode.PUBLISH, msg.requestId, Json.obj(), Reason.NotAuthorized, None, None)
+        Error(PUBLISH, msg.requestId, Json.obj(), Reason.NotAuthorized, None, None)
 
     }
 
@@ -95,20 +92,47 @@ class Broker(router:Router, client:ActorRef, pubSubService: PubSubService) exten
   }
 
   def onSubscribe(msg:Subscribe, client:ActorRef): Unit = {
-    router.sessionOpt match {
+    val response = router.sessionOpt match {
       case Some(session) =>
         try {
           if (!Uri.isValid(msg.topic))
             throw new InvalidUriException(msg.topic)
 
-//          val subscription = Subscription(IdGenerator(IdScope.Router))
-          pubSubService.subscribe(RealmUniqueTopic(session.realm, msg.topic))
+          val subscriptionId = pubSubService.subscribe(RealmUniqueTopic(session.realm, msg.topic), client)
+          session.subscriptionIds.add(subscriptionId)
+
+          Subscribed(msg.requestId, subscriptionId)
+        }  catch {
+          case t:WampException =>
+            Error(SUBSCRIBE, msg.requestId, Json.obj("message" -> t.toString), t.reason, None, None)
+
+          case t:Throwable =>
+            Error(SUBSCRIBE, msg.requestId, Json.obj("message" -> t.getMessage), Reason.Unknown, None, None)
         }
       case _ =>
+        Error(SUBSCRIBE, msg.requestId, Json.obj(), Reason.NotAuthorized, None, None)
     }
+
+    client ! response
   }
 
   def onUnsubscribe(msg:Unsubscribe, client:ActorRef): Unit = {
+    val response = router.sessionOpt match {
+      case Some(session) =>
+        session.subscriptionIds.contains(msg.subscriptionId) match {
+          case true =>
+            pubSubService.unsubscribe(msg.subscriptionId)
 
+            Unsubscribed(msg.requestId)
+
+          case false =>
+            Error(UNSUBSCRIBE, msg.subscriptionId, Json.obj(), Reason.NoSuchSubscription, None, None)
+        }
+
+      case _ =>
+        Error(UNSUBSCRIBE, msg.requestId, Json.obj(), Reason.NotAuthorized, None, None)
+    }
+
+    client ! response
   }
 }

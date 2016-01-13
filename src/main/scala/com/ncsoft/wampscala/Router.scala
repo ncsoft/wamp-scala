@@ -6,6 +6,9 @@ import akka.actor._
 import play.api.libs.json.{JsObject, Json}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits
 
 object Router {
   val sessions = new ConcurrentHashMap[Long, Session].asScala // session id, session data
@@ -38,29 +41,28 @@ object Router {
   ).as[JsObject]
 }
 
-class Router(val clientOpt:Option[ActorRef], pubSubService: PubSubService) extends Actor {
+class Router(clientOpt:Option[ActorRef] = None,
+             pubSubServiceOpt: Option[PubSubService] = None,
+             idGeneratorOpt:Option[IdGenerator] = None,
+             ec:ExecutionContext = Implicits.global) extends Actor {
+  val idGenerator = idGeneratorOpt.getOrElse(new SimpleIdGenerator)
+  def handler(x:Long, y:Event):Any = {}
+  val pubSubService = pubSubServiceOpt.getOrElse(new SimplePubSubService(handler, idGenerator, ec))
+
   val broker = new Broker(this, pubSubService)
   val dealer = new Dealer(this)
 
   var sessionOpt:Option[Session] = None
-
-  def getClient = clientOpt.getOrElse(sender())
 
   def onHello(msg:Hello, client:ActorRef) = {
     val response:Message = sessionOpt.map { session =>
       Welcome(session.id, Json.obj())
     }.getOrElse {
       try {
+        if (!Uri.isValid(msg.realm))
+          throw new InvalidUriException(msg.realm)
 
-        // URI check
-        msg.realm match {
-          case Uri(realm) =>
-
-          case _ =>
-            throw new InvalidUriException(msg.realm)
-        }
-
-        val session = Session(IdGenerator(IdScope.Global), msg.realm, self, getClient)
+        val session = Session(idGenerator(IdScope.Global), msg.realm, self, client, new mutable.HashSet[Long]())
         sessionOpt = Some(session)
         Router.sessions.put(session.id, session)
         Router.realmSet.putIfAbsent(session.realm, session.realm)
@@ -71,6 +73,7 @@ class Router(val clientOpt:Option[ActorRef], pubSubService: PubSubService) exten
         case t:WampException =>
           Abort(Json.obj("message" -> t.message), t.reason)
         case t:Throwable =>
+          val x = t
           Abort(Json.obj("message" -> t.getMessage), Reason.Unknown)
       }
     }
@@ -82,7 +85,7 @@ class Router(val clientOpt:Option[ActorRef], pubSubService: PubSubService) exten
   }
 
   def onAuthenticate(msg:Authenticate, client:ActorRef): Unit = {
-    client ! Error(MessageCode.INVALID, IdGenerator(IdScope.Session), Json.obj(), "Not implemented", None, None)
+    client ! Error(MessageCode.INVALID, idGenerator(IdScope.Session), Json.obj(), "Not implemented", None, None)
   }
 
   def onGoodBye(msg:GoodBye, client:ActorRef): Unit = {
@@ -114,7 +117,22 @@ class Router(val clientOpt:Option[ActorRef], pubSubService: PubSubService) exten
 
   def receive:Receive = {
     case wampMsg:Message =>
-      integratedMessageHandler(getClient)(wampMsg)
+      val client = clientOpt.getOrElse(sender())
+      integratedMessageHandler(client)(wampMsg)
   }
 
+  override def postStop(): Unit = {
+    sessionOpt.foreach { session =>
+      Router.sessions.remove(session.id)
+
+      // subscription 해제
+
+//      session.subscriptionIds.foreach { subscriptionId =>
+//        pubSubService.unsubscribe()
+//      }
+    }
+
+
+
+  }
 }

@@ -1,5 +1,7 @@
 package com.ncsoft.wampscala
 
+import play.api.libs.json.{Reads, JsPath}
+
 object MessageCode extends Enumeration {
   type MessageCode = Value
 
@@ -30,5 +32,5 @@ object MessageCode extends Enumeration {
   val YIELD         = Value(70)
   val INVALID       = Value(1023)
 
-//  implicit val reads:Reads[MessageCode.Value] = JsPath.read[Int].map { x => MessageCode(x) }
+  implicit val reads:Reads[MessageCode.Value] = JsPath.read[Int].map { x => MessageCode(x) }
 }

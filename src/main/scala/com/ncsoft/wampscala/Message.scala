@@ -1,7 +1,6 @@
 package com.ncsoft.wampscala
 
 import play.api.libs.json._
-import spray.json._
 
 import MessageCode._
 import scala.util.Try
@@ -19,86 +18,86 @@ object Message {
 
   def deserialize(payload:String):Message = {
     try {
-      val j = JsonParser(payload).asInstanceOf[JsArray]
-      val code = MessageCode(j.elements.head.asInstanceOf[Int])
+      val j = Json.parse(payload).as[JsArray]
+      val code = MessageCode(j.value.head.as[Int])
 
       code match {
         case HELLO =>
-          Hello(j.elements(1).asInstanceOf[String], j.elements(2).asInstanceOf[JsObject])
+          Hello(j(1).as[String], j(2).as[JsObject])
 
         case CHALLENGE =>
-          Challenge(j.elements(1).asInstanceOf[String], j.elements(2).asInstanceOf[JsObject])
+          Challenge(j(1).as[String], j(2).as[JsObject])
 
         case AUTHENTICATE =>
-          Authenticate(j.elements(1).asInstanceOf[String], j.elements(2).asInstanceOf[JsObject])
+          Authenticate(j(1).as[String], j(2).as[JsObject])
 
         case WELCOME =>
-          Welcome(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject])
+          Welcome(j(1).as[Long], j(2).as[JsObject])
 
         case GOODBYE =>
-          GoodBye(j.elements(1).asInstanceOf[JsObject], j.elements(2).asInstanceOf[String])
+          GoodBye(j(1).as[JsObject], j(2).as[String])
 
         case PUBLISH =>
-          Publish(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject],
-            j.elements(3).asInstanceOf[String], Try(j.elements(4).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(5).asInstanceOf[JsObject]).toOption)
+          Publish(j(1).as[Long], j(2).as[JsObject],
+            j(3).as[String], j(4).asOpt[JsArray],
+            j(5).asOpt[JsObject])
 
         case PUBLISHED =>
-          Published(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long])
+          Published(j(1).as[Long], j(2).as[Long])
 
         case SUBSCRIBE =>
-          Subscribe(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject], j.elements(3).asInstanceOf[String])
+          Subscribe(j(1).as[Long], j(2).as[JsObject], j(3).as[String])
 
         case SUBSCRIBED =>
-          Subscribed(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long])
+          Subscribed(j(1).as[Long], j(2).as[Long])
 
         case UNSUBSCRIBE =>
-          Unsubscribe(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long])
+          Unsubscribe(j(1).as[Long], j(2).as[Long])
 
         case UNSUBSCRIBED =>
-          Unsubscribed(j.elements(1).asInstanceOf[Long])
+          Unsubscribed(j(1).as[Long])
 
         case REGISTER =>
-          Register(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject], j.elements(3).asInstanceOf[String])
+          Register(j(1).as[Long], j(2).as[JsObject], j(3).as[String])
 
         case REGISTERED =>
-          Registered(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long])
+          Registered(j(1).as[Long], j(2).as[Long])
 
         case UNREGISTER =>
-          Unregister(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long])
+          Unregister(j(1).as[Long], j(2).as[Long])
 
         case UNREGISTERED =>
-          Unregistered(j.elements(1).asInstanceOf[Long])
+          Unregistered(j(1).as[Long])
 
         case YIELD =>
-          Yield(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject],
-            Try(j.elements(3).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(4).asInstanceOf[JsObject]).toOption)
+          Yield(j(1).as[Long], j(2).as[JsObject],
+            j(3).asOpt[JsArray],
+            j(4).asOpt[JsObject])
 
         case ERROR =>
-          Error(j.elements(1).asInstanceOf[MessageCode], j.elements(2).asInstanceOf[Long],
-            j.elements(3).asInstanceOf[JsObject], j.elements(4).asInstanceOf[String],
-            Try(j.elements(5).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(6).asInstanceOf[JsObject]).toOption)
+          Error(j(1).as[MessageCode], j(2).as[Long],
+            j(3).as[JsObject], j(4).as[String],
+            j(5).asOpt[JsArray],
+            j(6).asOpt[JsObject])
 
         case RESULT =>
-          Result(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject],
-            Try(j.elements(3).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(4).asInstanceOf[JsObject]).toOption)
+          Result(j(1).as[Long], j(2).as[JsObject],
+            j(3).asOpt[JsArray],
+            j(4).asOpt[JsObject])
 
         case EVENT =>
-          Event(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long],
-            j.elements(3).asInstanceOf[JsObject], Try(j.elements(4).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(5).asInstanceOf[JsObject]).toOption)
+          Event(j(1).as[Long], j(2).as[Long],
+            j(3).as[JsObject], j(4).asOpt[JsArray],
+            j(5).asOpt[JsObject])
 
         case HEARTBEAT =>
-          Heartbeat(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[Long],
-            Try(j.elements(3).asInstanceOf[String]).toOption)
+          Heartbeat(j(1).as[Long], j(2).as[Long],
+            j(3).asOpt[String])
 
         case CALL =>
-          Call(j.elements(1).asInstanceOf[Long], j.elements(2).asInstanceOf[JsObject],
-            j.elements(3).asInstanceOf[String], Try(j.elements(4).asInstanceOf[JsArray]).toOption,
-            Try(j.elements(5).asInstanceOf[JsObject]).toOption)
+          Call(j(1).as[Long], j(2).as[JsObject],
+            j(3).as[String], j(4).asOpt[JsArray],
+            j(5).asOpt[JsObject])
       }
     } catch {
       case e:Throwable =>
