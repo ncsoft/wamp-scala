@@ -1,6 +1,6 @@
 package com.ncsoft.wampscala
 
-import akka.actor.ActorSystem
+import akka.actor.{PoisonPill, ActorSystem}
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import org.scalatest._
@@ -14,33 +14,97 @@ with BeforeAndAfterAll {
   def this() = this(ActorSystem("DealerSpec"))
 
   implicit val timeout:akka.util.Timeout = 10.second
+  implicit def akkaTimeToDuration(akkaTimeout:akka.util.Timeout):FiniteDuration = akkaTimeout.duration
+
+  val idGen = new SimpleIdGenerator
+
+  override def beforeAll(): Unit = {
+  }
 
   override def afterAll() {
     TestKit.shutdownActorSystem(system)
   }
 
   "Dealer" must {
-    "handle HELLO" in {
-      val router = TestActorRef(new Router)
+    "handle REGISTER" in {
+      val router = new Router()
+      val routerActor = TestActorRef(new RouterActor(router))
 
-      val futureResult = router ? Hello("realm", Json.obj())
-      val Success(result:Message) = futureResult.value.get
+      routerActor ! Hello("realm", Json.obj())
+      expectMsgClass[Welcome](timeout, classOf[Welcome])
 
-      assert(result.code == MessageCode.WELCOME)
+      val procedure = "test_procedure"
+      routerActor ! Register(idGen(IdScope.Global), Json.obj(), procedure)
+      expectMsgClass[Registered](timeout, classOf[Registered])
+
+      routerActor ! PoisonPill
     }
 
-    "handle GOODBYE" in {
-      val router = TestActorRef(new Router)
+    "handle CALL" in {
+      val router = new Router()
+      val routerActor = TestActorRef(new RouterActor(router))
 
-      val futureResult = router ? Hello("realm", Json.obj())
-      val Success(result:Message) = futureResult.value.get
+      val procedure = Procedure("test_procedure", in => {
+        Yield(in.requestId, Json.obj(), None, None)
+      })
 
-      assert(result.code == MessageCode.WELCOME)
+      routerActor ! Hello("realm", Json.obj())
+      expectMsgClass[Welcome](timeout, classOf[Welcome])
 
-      val futureResult2 = router ? GoodBye(Json.obj(), Reason.GoodByeAndOut)
-      val Success(result2:Message) = futureResult2.value.get
+      routerActor ! Register(idGen(IdScope.Global), Json.obj(), procedure.name)
+      expectMsgClass[Registered](timeout, classOf[Registered])
 
-      assert(result2.code == MessageCode.GOODBYE)
+      val callRequestId = idGen(IdScope.Global)
+      routerActor ! Call(callRequestId, Json.obj(), procedure.name, None, None)
+      val invocation = expectMsgClass[Invocation](timeout, classOf[Invocation])
+
+      routerActor ! procedure.action(invocation) // yield
+
+      val r = expectMsgClass[Result](timeout, classOf[Result])
+      assert(r.requestId == callRequestId)
+
+      routerActor ! PoisonPill
+    }
+
+    "handle UNREGISTER" in {
+      val router = new Router()
+      val routerActor = TestActorRef(new RouterActor(router))
+
+      routerActor ! Hello("realm", Json.obj())
+      expectMsgClass[Welcome](timeout, classOf[Welcome])
+
+      val procedure = "test_procedure"
+
+      routerActor ! Register(idGen(IdScope.Global), Json.obj(), procedure)
+      val r1 = expectMsgClass[Registered](timeout, classOf[Registered])
+
+      routerActor ! Unregister(idGen(IdScope.Global), r1.registrationId)
+      expectMsgClass[Unregistered](timeout, classOf[Unregistered])
+
+      routerActor ! PoisonPill
+    }
+
+    "unregister when session is closed" in {
+      val router = new Router()
+      val routerActor = TestActorRef(new RouterActor(router))
+
+      routerActor ! Hello("realm", Json.obj())
+      expectMsgClass[Welcome](timeout, classOf[Welcome])
+
+      val procedure = "test_procedure"
+
+      val f1 = routerActor ? Register(idGen(IdScope.Global), Json.obj(), procedure)
+      val Success(r1:Message) = f1.value.get
+      assert(r1.code == MessageCode.REGISTERED)
+      val registrationId = r1.asInstanceOf[Registered].registrationId
+
+      routerActor ! GoodBye(Json.obj(), "")
+      expectMsgClass[GoodBye](timeout, classOf[GoodBye])
+
+      assert(router.registrationsById.get(registrationId).isEmpty)
+
+      routerActor ! PoisonPill
+
     }
   }
 }

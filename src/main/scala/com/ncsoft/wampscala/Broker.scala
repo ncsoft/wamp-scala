@@ -16,22 +16,19 @@ object TrustLevel {
   val Default = Lowest
 }
 
-object Broker {
-  val createdTopics = new mutable.HashSet[String]
-}
-
-
-class Broker(router:Router, pubSubService: PubSubService) extends Role {
+class Broker(router:Router) {
   object RealmUniqueTopic {
     def apply(realm:String, topic:String):String = {
       s"$realm..$topic"
     }
   }
 
-  override def messageHandler(client:ActorRef) = {
-    case msg:Publish =>     onPublish(msg, client)
-    case msg:Subscribe =>   onSubscribe(msg, client)
-    case msg:Unsubscribe => onUnsubscribe(msg, client)
+  def pubSubService = router.pubSubService
+
+  def messageHandler(sessionOpt:Option[Session], client:ActorRef):PartialFunction[Message, Unit] = {
+    case msg:Publish =>     onPublish(msg, sessionOpt, client)
+    case msg:Subscribe =>   onSubscribe(msg, sessionOpt, client)
+    case msg:Unsubscribe => onUnsubscribe(msg, sessionOpt, client)
   }
 
   protected def translatePublishOptions(options:JsObject, session:Session):JsObject = {
@@ -59,8 +56,8 @@ class Broker(router:Router, pubSubService: PubSubService) extends Role {
     JsObject(translated.toSeq)
   }
 
-  def onPublish(msg:Publish, client:ActorRef): Unit = {
-    val response = router.sessionOpt match {
+  def onPublish(msg:Publish, sessionOpt:Option[Session], client:ActorRef): Unit = {
+    val response = sessionOpt match {
       case Some(session) =>
         try {
           if (!Uri.isValid(msg.topic))
@@ -91,8 +88,8 @@ class Broker(router:Router, pubSubService: PubSubService) extends Role {
     client ! response
   }
 
-  def onSubscribe(msg:Subscribe, client:ActorRef): Unit = {
-    val response = router.sessionOpt match {
+  def onSubscribe(msg:Subscribe, sessionOpt:Option[Session], client:ActorRef): Unit = {
+    val response = sessionOpt match {
       case Some(session) =>
         try {
           if (!Uri.isValid(msg.topic))
@@ -116,8 +113,8 @@ class Broker(router:Router, pubSubService: PubSubService) extends Role {
     client ! response
   }
 
-  def onUnsubscribe(msg:Unsubscribe, client:ActorRef): Unit = {
-    val response = router.sessionOpt match {
+  def onUnsubscribe(msg:Unsubscribe, sessionOpt:Option[Session], client:ActorRef): Unit = {
+    val response = sessionOpt match {
       case Some(session) =>
         unsubscribe(session, msg.subscriptionId) match {
           case true =>
