@@ -15,7 +15,6 @@ class Router(
               idGeneratorOpt:Option[IdGenerator] = None,
               pubSubServiceOpt: Option[PubSubService] = None,
               ecOpt:Option[ExecutionContext] = None,
-              actorSystemOpt:Option[ActorSystem] = None,
               numberOfInstance:Int = 5
               ) {
 
@@ -53,39 +52,17 @@ class Router(
 
   val idGenerator = idGeneratorOpt.getOrElse(new SimpleIdGenerator)
   val pubSubService = pubSubServiceOpt.getOrElse(new SimplePubSubService(idGenerator, ecOpt.getOrElse(Implicits.global)))
-  val router = actorSystemOpt.getOrElse(
-    ActorSystem("wamp-scala")
-  ).actorOf(RoundRobinPool(numberOfInstance).props(Props(classOf[RouterActor], this)), "router")
+//  val router = actorSystemOpt.getOrElse(
+//    ActorSystem("wamp-scala")
+//  ).actorOf(RoundRobinPool(numberOfInstance).props(Props(classOf[RouterActor], this)), "router")
 
   val predefinedProcedures = Map(
 
   )
 
-  def apply():ActorRef = router
-
-//  def idGenerator = _idGeneratorOpt.getOrElse(
-//    throw new WampException(Some("Not initialized: you must invoke Router.initialize"))
-//  )
-//
-//  def pubSubService = _pubSubServiceOpt.getOrElse(
-//    throw new WampException(Some("Not initialized: you must invoke Router.initialize"))
-//  )
-
-//  def initialize(
-//                  idGeneratorOpt:Option[IdGenerator] = None,
-//                  pubSubServiceOpt: Option[PubSubService] = None,
-//                  ec:ExecutionContext = Implicits.global,
-//                  actorSystem:ActorSystem = ActorSystem("wamp-scala"),
-//                  numberOfInstance:Int = 5
-//                  ): Unit ={
-//
-//    _idGeneratorOpt = idGeneratorOpt.orElse(Some(new SimpleIdGenerator))
-//    _pubSubServiceOpt = pubSubServiceOpt.orElse(Some(new SimplePubSubService(idGenerator, ec)))
-//
-//    _router = Some(actorSystem.actorOf(RoundRobinPool(numberOfInstance).props(Props[RouterActor]), "router"))
-//
-//    registerPredefinedProcedures()
-//  }
+  def createActor(context:ActorContext):ActorRef = {
+    context.actorOf(Props(new RouterActor(this)))
+  }
 
   protected def registerPredefinedProcedures(): Unit = {
     // TODO: implement
