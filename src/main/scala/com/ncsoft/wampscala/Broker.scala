@@ -16,7 +16,7 @@ object TrustLevel {
   val Default = Lowest
 }
 
-class Broker(router:Router) {
+class Broker(router:Router, implicit val routerActor:ActorRef) {
   object RealmUniqueTopic {
     def apply(realm:String, topic:String):String = {
       s"$realm..$topic"

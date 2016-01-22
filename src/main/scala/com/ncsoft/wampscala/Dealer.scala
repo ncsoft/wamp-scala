@@ -7,7 +7,7 @@ import play.api.libs.json.{JsBoolean, JsNumber, JsObject, Json}
 case class Registration(id:Long, procedureName:String, callee:ActorRef)
 case class InvokeContext(invocationId:Long, caller:ActorRef, requestId:Long)
 
-class Dealer(router:Router) {
+class Dealer(router:Router, implicit val routerActor:ActorRef) {
   object TrustLevel {
     val Lowest = 0
     val Low = 1

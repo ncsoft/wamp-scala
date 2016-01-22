@@ -72,8 +72,8 @@ class Router(
 class RouterActor(router:Router) extends Actor {
   def idGenerator = router.idGenerator
 
-  val broker = new Broker(router)
-  val dealer = new Dealer(router)
+  val broker = new Broker(router, self)
+  val dealer = new Dealer(router, self)
 
   var sessionOpt:Option[Session] = None
 
