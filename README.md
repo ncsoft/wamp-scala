@@ -1,10 +1,16 @@
+# WAMP?
+[WAMP](http://wamp-proto.org/)(Web Application Messaging Protocol) is a protocol that provides most of messaging features. 
+Compared to other protocols such as [XMPP](https://en.wikipedia.org/wiki/XMPP), WAMP is concise and straightforward to understand and implement.  
+
 # wamp-scala?
-[wamp](http://wamp-proto.org/)의 scala 구현체이다.
+wamp-scala is an implementation of [wamp](http://wamp-proto.org/) in Scala. 
 
-# Contribution
-개발에 참여하기 위한 가이드
+# Limitations
+wamp-scala does not handle web socket connections yet.   
 
-## Development Enviornment
+# For Contributors
+
+## Development Environment
 * Language: Scala(2.11)
 * Framework: [Akka](http://akka.io)(2.4.1)
 * Build: [sbt](http://www.scala-sbt.org/)(0.13.8)

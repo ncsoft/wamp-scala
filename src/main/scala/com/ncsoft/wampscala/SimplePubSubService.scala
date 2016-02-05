@@ -34,9 +34,9 @@ class SimplePubSubService(idGenerator:IdGenerator, ec:ExecutionContext)
     }
   }
 
-  def publish(topic:String, publicationId:Long, options:JsObject, argumentsOpt:Option[JsArray],
+  def publish(topic:String, requestId:Long, options:JsObject, argumentsOpt:Option[JsArray],
               argumentsKwOpt:Option[JsObject]):Long = {
-    val publicationId = idGenerator(IdScope.Global)
+    val publishedId = idGenerator.nextGlobalScopeId()
 
     Future {
       topics.get(topic).foreach { topic =>
@@ -50,20 +50,18 @@ class SimplePubSubService(idGenerator:IdGenerator, ec:ExecutionContext)
         }.foreach { s =>
           val event = Event(
             s.id,
-            publicationId,
+            publishedId,
             options - Keyword.eligible - Keyword.exclude,
             argumentsOpt,
             argumentsKwOpt
           )
 
           s.client ! event
-
-//          eventHandler(subscriptionId, event)
         }
       }
     } (ec)
 
-    publicationId
+    publishedId
   }
 
 
