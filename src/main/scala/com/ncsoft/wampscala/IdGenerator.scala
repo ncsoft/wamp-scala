@@ -1,9 +1,14 @@
 package com.ncsoft.wampscala
 
-object IdScope {
-  val Global = 1
-  val Router = 2
-  val Session = 3
+import com.ncsoft.wampscala.IdScope.IdScope
+
+object IdScope extends Enumeration {
+  type IdScope = Value
+
+  val Global = Value("global")
+  val Router = Value("router")
+  val Session = Value("session")
+
   val Default = Router
 }
 
@@ -19,9 +24,9 @@ object IdScope {
 //}
 
 trait IdGenerator {
-  def apply(scope:Int) = nextId(scope)
+  def apply(scope:IdScope) = nextId(scope)
 
-  def nextId(scope:Int): Long = {
+  def nextId(scope:IdScope): Long = {
     scope match {
       case IdScope.Global =>
         nextGlobalScopeId()

@@ -5,7 +5,7 @@ Compared to other protocols such as [XMPP](https://en.wikipedia.org/wiki/XMPP), 
 # wamp-scala?
 wamp-scala is an implementation of [wamp](http://wamp-proto.org/) in Scala. 
 
-# Limitations
+# Restrictions
 wamp-scala does not handle web socket connections yet.   
 
 # For Contributors
