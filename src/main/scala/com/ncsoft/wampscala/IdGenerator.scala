@@ -12,17 +12,6 @@ object IdScope extends Enumeration {
   val Default = Router
 }
 
-//object IdGenerator {
-//
-//  protected var idGenerator:IdGenerator = null
-//
-//  def initialize(generator:IdGenerator) = {
-//    idGenerator = generator
-//  }
-//
-//  def apply(scope:Int = IdScope.Default): Long = idGenerator.nextId(scope)
-//}
-
 trait IdGenerator {
   def apply(scope:IdScope) = nextId(scope)
 

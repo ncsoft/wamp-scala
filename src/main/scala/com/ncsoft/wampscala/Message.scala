@@ -12,6 +12,15 @@ sealed abstract class Message {
   def toJson:JsValue
 
   def serialize:String = toJson.toString()
+
+  // argumentsOpt must be defined if arguemntsKwOpt is defined
+  def serializeArguments(argumentsOpt:Option[JsArray], argumentsKwOpt:Option[JsObject]) = {
+    if (argumentsOpt.isEmpty && argumentsKwOpt.isDefined)
+      Vector(Some(JsArray()), argumentsKwOpt).flatten
+    else
+      Vector(argumentsOpt, argumentsKwOpt).flatten
+  }
+
 }
 
 object Message {
@@ -265,10 +274,8 @@ case class Publish(requestId:Long, options:JsObject, topic:String, argumentsOpt:
       Vector(
         Some(JsNumber(code.id)),
         Some(options),
-        Some(JsString(topic)),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(JsString(topic))
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 }
 
@@ -295,10 +302,8 @@ case class Event(subscriptionId:Long, publicationId:Long, details:JsObject,
         Some(JsNumber(code.id)),
         Some(JsNumber(subscriptionId)),
         Some(JsNumber(publicationId)),
-        Some(details),
-        publishArgumentsOpt,
-        publishArgumentsKwOpt
-      ).flatten
+        Some(details)
+      ).flatten ++ serializeArguments(publishArgumentsOpt, publishArgumentsKwOpt)
     )
 }
 
@@ -312,10 +317,8 @@ case class Call(requestId:Long, options:JsObject, procedure:String,
         Some(JsNumber(code.id)),
         Some(JsNumber(requestId)),
         Some(options),
-        Some(JsString(procedure)),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(JsString(procedure))
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 }
 
@@ -381,10 +384,8 @@ case class Invocation(requestId:Long, registrationId:Long, details:JsObject, arg
         Some(JsNumber(code.id)),
         Some(JsNumber(requestId)),
         Some(JsNumber(registrationId)),
-        Some(details),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(details)
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 }
 
@@ -397,10 +398,8 @@ case class Yield(requestId:Long, options:JsObject, argumentsOpt:Option[JsArray],
       Vector(
         Some(JsNumber(code.id)),
         Some(JsNumber(requestId)),
-        Some(options),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(options)
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 }
 
@@ -413,10 +412,8 @@ case class Result(requestId:Long, details:JsObject, argumentsOpt:Option[JsArray]
       Vector(
         Some(JsNumber(code.id)),
         Some(JsNumber(requestId)),
-        Some(details),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(details)
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 }
 
@@ -431,10 +428,8 @@ case class Error(subCode:MessageCode, id:Long, details:JsObject, error:String, a
         Some(JsNumber(subCode.id)),
         Some(JsNumber(id)),
         Some(details),
-        Some(JsString(error)),
-        argumentsOpt,
-        argumentsKwOpt
-      ).flatten
+        Some(JsString(error))
+      ).flatten ++ serializeArguments(argumentsOpt, argumentsKwOpt)
     )
 
 }
