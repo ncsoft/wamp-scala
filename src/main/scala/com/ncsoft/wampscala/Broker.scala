@@ -17,11 +17,11 @@ object TrustLevel {
 }
 
 class Broker(router:Router, implicit val routerActor:ActorRef) {
-  object RealmUniqueTopic {
-    def apply(realm:String, topic:String):String = {
-      s"$realm..$topic"
-    }
-  }
+//  object RealmUniqueTopic {
+//    def apply(realm:String, topic:String):String = {
+//      s"$realm..$topic"
+//    }
+//  }
 
   def pubSubService = router.pubSubService
 
@@ -64,7 +64,8 @@ class Broker(router:Router, implicit val routerActor:ActorRef) {
             throw new InvalidUriException(msg.topic)
 
           val publicationId = pubSubService.publish(
-            RealmUniqueTopic(session.realm, msg.topic),
+            session.realm,
+            msg.topic,
             msg.requestId,
             translatePublishOptions(msg.options ++ Json.obj(Keyword.trustLevel -> TrustLevel.Default), session),
             msg.argumentsOpt,
@@ -95,7 +96,7 @@ class Broker(router:Router, implicit val routerActor:ActorRef) {
           if (!Uri.isValid(msg.topic))
             throw new InvalidUriException(msg.topic)
 
-          val subscriptionId = pubSubService.subscribe(RealmUniqueTopic(session.realm, msg.topic), client)
+          val subscriptionId = pubSubService.subscribe(session.realm, msg.topic, client)
           session.subscriptionIds.add(subscriptionId)
 
           Subscribed(msg.requestId, subscriptionId)

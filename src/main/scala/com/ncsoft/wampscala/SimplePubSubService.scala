@@ -13,10 +13,13 @@ class SimplePubSubService(idGenerator:IdGenerator, ec:ExecutionContext)
   val topics = new mutable.HashMap[String, Topic]
   val subscribedTopics = new mutable.HashMap[Long, Topic]
 
-  def subscribe(topicString:String, client:ActorRef):Long = {
+  def topicKey(realm:String, topic:String):String = s"$realm-$topic"
+
+  def subscribe(realm:String, topicString:String, client:ActorRef):Long = {
     val subscriptionId = idGenerator(IdScope.Router)
 
-    val topic = topics.getOrElseUpdate(topicString, {
+    val k = topicKey(realm, topicString)
+    val topic = topics.getOrElseUpdate(k, {
       new Topic(topicString)
     })
 
@@ -34,12 +37,13 @@ class SimplePubSubService(idGenerator:IdGenerator, ec:ExecutionContext)
     }
   }
 
-  def publish(topic:String, requestId:Long, options:JsObject, argumentsOpt:Option[JsArray],
+  def publish(realm:String, topic:String, requestId:Long, options:JsObject, argumentsOpt:Option[JsArray],
               argumentsKwOpt:Option[JsObject]):Long = {
     val publishedId = idGenerator.nextGlobalScopeId()
 
     Future {
-      topics.get(topic).foreach { topic =>
+
+      topics.get(topicKey(realm, topic)).foreach { topic =>
         val eligibleSessions = (options \ Keyword.eligible).asOpt[JsArray].getOrElse(Json.arr()).value.map(_.as[Long])
         val excludeSessions = (options \ Keyword.exclude).asOpt[JsArray].getOrElse(Json.arr()).value.map(_.as[Long])
 

@@ -6,9 +6,9 @@ import play.api.libs.json.{JsArray, JsObject}
 import scala.concurrent.ExecutionContext
 
 abstract class PubSubService(ec:ExecutionContext) {
-  def subscribe(topic:String, client:ActorRef):Long
+  def subscribe(realm:String, topic:String, client:ActorRef):Long
   def unsubscribe(id:Long)
 
-  def publish(topic:String, publicationId:Long, options:JsObject, argumentsOpt:Option[JsArray],
+  def publish(realm:String, topic:String, publicationId:Long, options:JsObject, argumentsOpt:Option[JsArray],
               argumentsKwOpt:Option[JsObject]):Long
 }
